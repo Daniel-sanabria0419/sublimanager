@@ -67,7 +67,7 @@ MENU_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
         "REPORTES",
         [
-            ("reportes", "Reportes (próximamente)"),
+            ("reportes", "Reportes"),
         ],
     ),
     (

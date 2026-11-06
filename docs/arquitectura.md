@@ -1,4 +1,4 @@
-# Arquitectura — resumen (Stage 7)
+# Arquitectura — resumen (Stage 9)
 
 Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 [`nomenclatura.md`](nomenclatura.md). Schema: [`database.md`](database.md).
@@ -7,9 +7,9 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 
 | Capa | Tecnología | Rol |
 |------|------------|-----|
-| Desktop | CustomTkinter + HTTPX | UI (Stage 8); stub en Stage 1 |
+| Desktop | CustomTkinter + HTTPX + Matplotlib | UI (Stage 8–9); sin acceso a BD |
 | API | FastAPI / Uvicorn | Único canal REST (`/api/v1/…` en español) |
-| Dominio | Services Python | Reglas de negocio (Stage 3–7: inventario, productos, pedidos, producción, finanzas) |
+| Dominio | Services Python | Reglas de negocio (Stage 3–9: inventario…finanzas + reportes) |
 | Persistencia | SQLAlchemy 2.0 + Alembic + PostgreSQL (Psycopg 3) | Datos y migraciones |
 
 ## Invariantes
@@ -30,11 +30,12 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 
 - `core/` — config, database, exceptions, constants, logging
 - `models/` — 36 tablas SQLAlchemy 2.0 (paquetes A–G) + enums español
-- `schemas/` — DTOs Pydantic (inventario, compras, productos, recetas, pedidos, producción, finanzas)
+- `schemas/` — DTOs Pydantic (inventario…finanzas, reportes)
 - `repositories/` — persistencia sin orquestar multi-agregado
-- `services/` — autoridad de reglas §5.1–5.10 (finanzas Stage 7)
+- `services/` — autoridad de reglas §5.1–5.10 + ReportesService (Stage 9)
 - `api/v1/` — routers REST en español
 - `utils/decimal_policy.py` — `money_round` / `qty_round` / promedio ponderado
+- `utils/exportacion.py` — CSV/PDF de reportes clave
 
 ## Endpoints
 
@@ -127,3 +128,23 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 | GET | `/api/v1/finanzas/cuentas-por-cobrar` | Pedidos con saldo > 0 |
 | GET | `/api/v1/finanzas/cuentas-por-pagar` | Compras con saldo > 0 |
 | GET | `/api/v1/finanzas/resumen` | Ventas vs cobrado vs CxC; utilidad bruta/operativa (§5.10) |
+
+### Reportes y dashboard (Stage 9)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/v1/reportes/ventas/diarias` | Ventas ENTREGADAS por día |
+| GET | `/api/v1/reportes/ventas/mensuales` | Ventas ENTREGADAS por mes |
+| GET | `/api/v1/reportes/productos-mas-vendidos` | Top productos (cantidad) |
+| GET | `/api/v1/reportes/utilidad-por-producto` | Utilidad/margen estimado por producto |
+| GET | `/api/v1/reportes/rentabilidad-pedidos` | Rentabilidad por pedido ENTREGADO |
+| GET | `/api/v1/reportes/costos-produccion` | Asientos ESTIMADO/REAL |
+| GET | `/api/v1/reportes/costos-por-categoria` | Costos agregados por `tipo_costo` |
+| GET | `/api/v1/reportes/compras` | Compras no canceladas |
+| GET | `/api/v1/reportes/gastos` | Gastos operativos (excl. ligados a OP) |
+| GET | `/api/v1/reportes/inventario-valorizado` | Existencias × costo_promedio |
+| GET | `/api/v1/reportes/consumo-materiales` | Consumos de producción |
+| GET | `/api/v1/reportes/desperdicios` | Consumos `es_desperdicio` |
+| GET | `/api/v1/reportes/cuentas-pendientes` | Wrapper CxC/CxP Stage 7 |
+| GET | `/api/v1/reportes/dashboard` | KPIs + series para gráficos |
+| GET | `/api/v1/reportes/export/{tipo}` | CSV/PDF: `ventas`, `inventario-valorizado`, `rentabilidad-pedidos`, `resumen-financiero` |

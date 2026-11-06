@@ -28,6 +28,7 @@ from app.api.v1 import (
     productos,
     proveedores,
     recetas_producto,
+    reportes,
     tecnicas_produccion,
     tecnicas_producto,
     unidades_medida,
@@ -74,4 +75,6 @@ v1.include_router(pagos_gasto.router)
 v1.include_router(pagos_proveedor.router)
 v1.include_router(movimientos_caja.router)
 v1.include_router(finanzas.router)
+# Stage 9 — reportes y dashboard
+v1.include_router(reportes.router)
 api_router.include_router(v1)

@@ -27,6 +27,7 @@ from app.services.recetas import (
     PerfilCostoProductoService,
     RecetaProductoService,
 )
+from app.services.reportes import ReportesService
 
 __all__ = [
     "CajaService",
@@ -52,6 +53,7 @@ __all__ = [
     "ProductoService",
     "ProveedorService",
     "RecetaProductoService",
+    "ReportesService",
     "TecnicaProduccionService",
     "TecnicaProductoService",
     "VarianteProductoService",
