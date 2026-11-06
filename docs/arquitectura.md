@@ -1,4 +1,4 @@
-# Arquitectura — resumen (Stage 6)
+# Arquitectura — resumen (Stage 7)
 
 Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 [`nomenclatura.md`](nomenclatura.md). Schema: [`database.md`](database.md).
@@ -9,7 +9,7 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 |------|------------|-----|
 | Desktop | CustomTkinter + HTTPX | UI (Stage 8); stub en Stage 1 |
 | API | FastAPI / Uvicorn | Único canal REST (`/api/v1/…` en español) |
-| Dominio | Services Python | Reglas de negocio (Stage 3–6: inventario, productos, pedidos, producción) |
+| Dominio | Services Python | Reglas de negocio (Stage 3–7: inventario, productos, pedidos, producción, finanzas) |
 | Persistencia | SQLAlchemy 2.0 + Alembic + PostgreSQL (Psycopg 3) | Datos y migraciones |
 
 ## Invariantes
@@ -30,9 +30,9 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 
 - `core/` — config, database, exceptions, constants, logging
 - `models/` — 36 tablas SQLAlchemy 2.0 (paquetes A–G) + enums español
-- `schemas/` — DTOs Pydantic (inventario, compras, productos, recetas, pedidos, producción, finanzas mín.)
+- `schemas/` — DTOs Pydantic (inventario, compras, productos, recetas, pedidos, producción, finanzas)
 - `repositories/` — persistencia sin orquestar multi-agregado
-- `services/` — autoridad de reglas §5.1–5.7 y §5.8 (anticipos mínimos)
+- `services/` — autoridad de reglas §5.1–5.10 (finanzas Stage 7)
 - `api/v1/` — routers REST en español
 - `utils/decimal_policy.py` — `money_round` / `qty_round` / promedio ponderado
 
@@ -91,11 +91,11 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 | GET | `/api/v1/pedidos/{id}/saldo` | `total − pagos CONFIRMADOS` |
 | POST/GET | `/api/v1/pedidos/{id}/disenos` | Diseños (`ruta_archivo`, versiones) |
 | PATCH | `/api/v1/pedidos/disenos/{id}` | Estado de aprobación |
-| POST/GET | `/api/v1/metodos-pago` | Catálogo mínimo para anticipos |
-| POST/GET | `/api/v1/cuentas-caja` | Catálogo mínimo para anticipos |
+| CRUD | `/api/v1/metodos-pago` | Catálogo de métodos (DELETE = baja lógica) |
+| CRUD | `/api/v1/cuentas-caja` | Cuentas de caja + `/saldos` y `/{id}/saldo` |
 | POST/GET | `/api/v1/pagos` | Anticipos/pagos de pedido |
-| POST | `/api/v1/pagos/{id}/confirmar` | → `CONFIRMADO` + `movimientos_caja` |
-| POST | `/api/v1/pagos/{id}/anular` | Anula `PENDIENTE` |
+| POST | `/api/v1/pagos/{id}/confirmar` | → `CONFIRMADO` + `movimientos_caja` (idempotente) |
+| POST | `/api/v1/pagos/{id}/anular` | Anula `PENDIENTE` o `CONFIRMADO` (revierte caja) |
 
 ### Órdenes de producción (Stage 6)
 
@@ -111,3 +111,19 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 | POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/asientos-costo` | Costos REAL no material |
 | POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/cantidades` | Producida/rechazada (+ entrada PT si aplica) |
 | GET | `/api/v1/ordenes-produccion/{id}/comparacion-costos` | ESTIMADO vs REAL |
+
+### Finanzas (Stage 7)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| CRUD | `/api/v1/categorias-gasto` | Categorías de gasto operativo |
+| POST/GET/PATCH | `/api/v1/gastos` | Gastos + `estado_pago` (`NO_PAGADO\|PARCIAL\|PAGADO\|ANULADO`) |
+| POST | `/api/v1/gastos/{id}/anular` | Anula gasto sin pagos CONFIRMADOS |
+| POST/GET | `/api/v1/pagos-gasto` | Pagos parciales de gasto → caja `SALIDA` |
+| POST | `/api/v1/pagos-gasto/{id}/confirmar\|anular` | Confirmar (idempotente) / anular |
+| POST/GET | `/api/v1/pagos-proveedor` | Pagos parciales a compras → caja `SALIDA` |
+| GET | `/api/v1/pagos-proveedor/saldo/{compra_id}` | Saldo pendiente proveedor |
+| GET | `/api/v1/movimientos-caja` | Consulta (generados por pagos; 1 origen) |
+| GET | `/api/v1/finanzas/cuentas-por-cobrar` | Pedidos con saldo > 0 |
+| GET | `/api/v1/finanzas/cuentas-por-pagar` | Compras con saldo > 0 |
+| GET | `/api/v1/finanzas/resumen` | Ventas vs cobrado vs CxC; utilidad bruta/operativa (§5.10) |
