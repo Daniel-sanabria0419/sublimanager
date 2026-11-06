@@ -2,7 +2,7 @@
 
 ERP de sublimación (V1): backend FastAPI + PostgreSQL y cliente desktop CustomTkinter desacoplados por REST.
 
-**Etapa actual:** Stage 2 — Modelos y base de datos (36 tablas en español, Alembic, constraints). Services de negocio llegan en Stages 3–7.
+**Etapa actual:** Stage 3 — Inventario y compras (Services + API REST en español; stock solo vía movimientos; promedio ponderado).
 
 ## Stack
 

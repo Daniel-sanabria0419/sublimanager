@@ -8,23 +8,25 @@ API_V1_PREFIX = "/api/v1"
 HEALTH_PATH = "/health"
 HEALTH_DB_PATH = "/health/db"
 
-# Prefijos de recursos previstos (routers de negocio en Stages 3–7).
+# Prefijos de recursos (Stage 3 implementados; 4–7 previstos).
 RUTAS_RECURSOS_V1 = {
+    "categorias_material": f"{API_V1_PREFIX}/categorias-material",
+    "unidades_medida": f"{API_V1_PREFIX}/unidades-medida",
     "materiales": f"{API_V1_PREFIX}/materiales",
     "bodegas": f"{API_V1_PREFIX}/bodegas",
     "existencias": f"{API_V1_PREFIX}/existencias",
     "movimientos_inventario": f"{API_V1_PREFIX}/movimientos-inventario",
+    "proveedores": f"{API_V1_PREFIX}/proveedores",
+    "compras": f"{API_V1_PREFIX}/compras",
     "productos": f"{API_V1_PREFIX}/productos",
     "clientes": f"{API_V1_PREFIX}/clientes",
     "pedidos": f"{API_V1_PREFIX}/pedidos",
     "ordenes_produccion": f"{API_V1_PREFIX}/ordenes-produccion",
-    "proveedores": f"{API_V1_PREFIX}/proveedores",
-    "compras": f"{API_V1_PREFIX}/compras",
     "cuentas_caja": f"{API_V1_PREFIX}/cuentas-caja",
     "pagos": f"{API_V1_PREFIX}/pagos",
 }
 
-# Precisión Decimal de negocio (Stage 0; helpers money_round/qty_round en Stage 3+)
+# Precisión Decimal de negocio (ROUND_HALF_UP; ver utils/decimal_policy.py)
 DINERO_DECIMALES = 2
 CANTIDAD_DECIMALES = 4
 PORCENTAJE_DECIMALES = 2
