@@ -7,11 +7,16 @@ from app.api.v1 import (
     categorias_costo,
     categorias_material,
     categorias_producto,
+    clientes,
     compras,
+    cuentas_caja,
     existencias,
     health,
     materiales,
+    metodos_pago,
     movimientos_inventario,
+    pagos,
+    pedidos,
     perfiles_costo_producto,
     productos,
     proveedores,
@@ -47,4 +52,10 @@ v1.include_router(tecnicas_producto.router)
 v1.include_router(categorias_costo.router)
 v1.include_router(recetas_producto.router)
 v1.include_router(perfiles_costo_producto.router)
+# Stage 5 — clientes, pedidos, anticipos mínimos
+v1.include_router(clientes.router)
+v1.include_router(pedidos.router)
+v1.include_router(metodos_pago.router)
+v1.include_router(cuentas_caja.router)
+v1.include_router(pagos.router)
 api_router.include_router(v1)

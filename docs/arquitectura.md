@@ -1,4 +1,4 @@
-# Arquitectura — resumen (Stage 4)
+# Arquitectura — resumen (Stage 5)
 
 Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 [`nomenclatura.md`](nomenclatura.md). Schema: [`database.md`](database.md).
@@ -9,7 +9,7 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 |------|------------|-----|
 | Desktop | CustomTkinter + HTTPX | UI (Stage 8); stub en Stage 1 |
 | API | FastAPI / Uvicorn | Único canal REST (`/api/v1/…` en español) |
-| Dominio | Services Python | Reglas de negocio (Stage 3–4: inventario/compras/productos/recetas) |
+| Dominio | Services Python | Reglas de negocio (Stage 3–5: inventario, productos, pedidos) |
 | Persistencia | SQLAlchemy 2.0 + Alembic + PostgreSQL (Psycopg 3) | Datos y migraciones |
 
 ## Invariantes
@@ -21,14 +21,16 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 5. `ordenes_produccion.pedido_id` es **NOT NULL** en V1.
 6. Inventario solo cambia vía `movimientos_inventario` (+ `existencias`); Decimal ROUND_HALF_UP.
 7. Recetas y perfiles de costo son **históricos**: nueva versión/fila; no sobrescribir.
+8. Crear/editar pedido **no** descuenta inventario; `descuento` es monto; snapshots de precio/costo en `items_pedido`.
+9. Diseños de pedido guardan solo `ruta_archivo` (sin binarios en BD).
 
 ## Layout del backend (`backend/app/`)
 
 - `core/` — config, database, exceptions, constants, logging
 - `models/` — 36 tablas SQLAlchemy 2.0 (paquetes A–G) + enums español
-- `schemas/` — DTOs Pydantic (inventario, compras, productos, recetas)
+- `schemas/` — DTOs Pydantic (inventario, compras, productos, recetas, pedidos, finanzas mín.)
 - `repositories/` — persistencia sin orquestar multi-agregado
-- `services/` — autoridad de reglas §5.1–5.2 y §5.4
+- `services/` — autoridad de reglas §5.1–5.4 y §5.3/§5.8 (anticipos mínimos)
 - `api/v1/` — routers REST en español
 - `utils/decimal_policy.py` — `money_round` / `qty_round` / promedio ponderado
 
@@ -74,3 +76,21 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 | POST | `/api/v1/recetas-producto/{id}/activar` | Activa versión (desactiva hermanas) |
 | POST/GET | `/api/v1/perfiles-costo-producto` | Perfiles históricos (`vigente_desde`) |
 | POST | `/api/v1/perfiles-costo-producto/{id}/activar` | Activa perfil del alcance |
+
+### Clientes y pedidos (Stage 5)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| CRUD | `/api/v1/clientes` | Clientes (DELETE = baja lógica) |
+| POST/GET/PATCH | `/api/v1/pedidos` | Pedidos con ítems, descuento monto, totales |
+| POST | `/api/v1/pedidos/{id}/estado` | Transición validada + historial |
+| POST | `/api/v1/pedidos/{id}/cancelar` | → `CANCELADO` |
+| GET | `/api/v1/pedidos/{id}/historial-estados` | Historial de estados |
+| GET | `/api/v1/pedidos/{id}/saldo` | `total − pagos CONFIRMADOS` |
+| POST/GET | `/api/v1/pedidos/{id}/disenos` | Diseños (`ruta_archivo`, versiones) |
+| PATCH | `/api/v1/pedidos/disenos/{id}` | Estado de aprobación |
+| POST/GET | `/api/v1/metodos-pago` | Catálogo mínimo para anticipos |
+| POST/GET | `/api/v1/cuentas-caja` | Catálogo mínimo para anticipos |
+| POST/GET | `/api/v1/pagos` | Anticipos/pagos de pedido |
+| POST | `/api/v1/pagos/{id}/confirmar` | → `CONFIRMADO` + `movimientos_caja` |
+| POST | `/api/v1/pagos/{id}/anular` | Anula `PENDIENTE` |
