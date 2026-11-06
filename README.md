@@ -2,7 +2,7 @@
 
 ERP de sublimación (V1): backend FastAPI + PostgreSQL y cliente desktop CustomTkinter desacoplados por REST.
 
-**Etapa actual:** Stage 9 — Reportes y dashboard (KPIs, gráficos Matplotlib, exportación CSV/PDF).
+**Etapa actual:** Stage 10 — QA y estabilización (escenario integral vaso sublimable + integridad).
 
 ## Stack
 
@@ -49,10 +49,13 @@ Guía detallada: [`docs/instalacion.md`](docs/instalacion.md).
 
 ```bash
 ./scripts/run_tests.sh
-# Con BD de prueba:
-TEST_DATABASE_URL=postgresql+psycopg://sublimanager:sublimanager@localhost:5432/sublimanager \
+# Con BD de prueba (recomendado — integración + escenario §10):
+TEST_DATABASE_URL=postgresql+psycopg://sublimanager:sublimanager@localhost:5432/sublimanager_test \
   ./scripts/run_tests.sh
 ```
+
+Escenario de aceptación Stage 10: `backend/tests/test_aceptacion_e2e.py`
+(proveedor → compra → vaso personalizado → pedido → OP → pagos → ENTREGADO).
 
 ## Convenciones
 
