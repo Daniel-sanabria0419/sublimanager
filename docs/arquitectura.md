@@ -1,150 +1,122 @@
-# Arquitectura — resumen (Stage 9)
+# Arquitectura — SubliManager V1
 
-Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
-[`nomenclatura.md`](nomenclatura.md). Schema: [`database.md`](database.md).
+Documento de entrega alineado al código en `main` (Stages 1–10). Nomenclatura: [`nomenclatura.md`](nomenclatura.md). Schema: [`diccionario-datos.md`](diccionario-datos.md). Reglas: [`reglas-negocio.md`](reglas-negocio.md).
 
-## Capas
+## 1. Vista general
+
+SubliManager es una aplicación de escritorio con **backend y cliente desacoplados**:
 
 | Capa | Tecnología | Rol |
 |------|------------|-----|
-| Desktop | CustomTkinter + HTTPX + Matplotlib | UI (Stage 8–9); sin acceso a BD |
+| Desktop | CustomTkinter + HTTPX + Matplotlib | UI, navegación, presentación |
 | API | FastAPI / Uvicorn | Único canal REST (`/api/v1/…` en español) |
-| Dominio | Services Python | Reglas de negocio (Stage 3–9: inventario…finanzas + reportes) |
-| Persistencia | SQLAlchemy 2.0 + Alembic + PostgreSQL (Psycopg 3) | Datos y migraciones |
+| Dominio | Services Python | Reglas §5.1–5.10 + reportes |
+| Persistencia | SQLAlchemy 2.0 + Alembic + PostgreSQL (Psycopg 3) | 36 tablas, transacciones |
 
-## Invariantes
+```mermaid
+flowchart TB
+  subgraph desktop [desktop/]
+    Views[views / components / dialogs]
+    ApiClient[api client HTTPX]
+    Views --> ApiClient
+  end
+  subgraph backend [backend/app/]
+    API[api/v1 REST español]
+    Schemas[schemas Pydantic 2]
+    Services[services]
+    Repos[repositories]
+    Models[models SQLAlchemy]
+    API --> Schemas
+    API --> Services
+    Services --> Repos
+    Repos --> Models
+  end
+  PG[(PostgreSQL)]
+  ApiClient -->|HTTP JSON only| API
+  Models --> PG
+```
 
-1. El desktop **nunca** abre conexiones a PostgreSQL ni importa SQLAlchemy.
-2. Secretos solo por variables de entorno (`.env`); el repo solo incluye `.env.example`.
-3. Sin SQLite como BD principal.
-4. Identificadores de negocio (tablas, columnas, estados, UI, paths) en **español**.
-5. `ordenes_produccion.pedido_id` es **NOT NULL** en V1.
-6. Inventario solo cambia vía `movimientos_inventario` (+ `existencias`); Decimal ROUND_HALF_UP.
-7. Recetas y perfiles de costo son **históricos**: nueva versión/fila; no sobrescribir.
-8. Crear/editar pedido **no** descuenta inventario; `descuento` es monto; snapshots de precio/costo en `items_pedido`.
-9. Diseños de pedido guardan solo `ruta_archivo` (sin binarios en BD).
-10. Consumos de OP descuentan inventario **una sola vez** por consumo confirmado (`tipo_referencia=consumo_produccion`).
-11. Estados OP: `PLANIFICADA | EN_PROCESO | COMPLETADA | CANCELADA`; `produced + rejected ≤ planned`.
+### Frontera REST-only (invariante)
 
-## Layout del backend (`backend/app/`)
+1. El desktop **nunca** importa SQLAlchemy ni abre conexiones a PostgreSQL.  
+2. Las views **nunca** implementan reglas de negocio (costos, saldos, promedio ponderado, descuentos de inventario).  
+3. Toda operación importante pasa por **Services** dentro de transacciones.  
+4. Credenciales solo vía `.env` (el repo solo tiene `.env.example`).  
+5. PostgreSQL es la única BD principal (SQLite prohibido).
 
-- `core/` — config, database, exceptions, constants, logging
-- `models/` — 36 tablas SQLAlchemy 2.0 (paquetes A–G) + enums español
-- `schemas/` — DTOs Pydantic (inventario…finanzas, reportes)
-- `repositories/` — persistencia sin orquestar multi-agregado
-- `services/` — autoridad de reglas §5.1–5.10 + ReportesService (Stage 9)
-- `api/v1/` — routers REST en español
-- `utils/decimal_policy.py` — `money_round` / `qty_round` / promedio ponderado
-- `utils/exportacion.py` — CSV/PDF de reportes clave
+## 2. Capas del backend (`backend/app/`)
 
-## Endpoints
+| Carpeta | Responsabilidad |
+|---------|-----------------|
+| `core/` | Config, engine/session, excepciones, constantes, logging |
+| `models/` | 36 tablas (paquetes A–G) + enums español |
+| `schemas/` | DTOs Pydantic create/update/read |
+| `repositories/` | Persistencia y consultas; sin orquestar multi-agregado |
+| `services/` | Autoridad de reglas + `ReportesService` |
+| `api/v1/` | Routers delgados; paths kebab-case español |
+| `utils/` | `decimal_policy.py` (ROUND_HALF_UP), exportación CSV/PDF |
 
-### Salud (Stage 1)
+### Módulos lógicos
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/health` | Proceso vivo |
-| GET | `/health/db` | Ping PostgreSQL |
+| Código | Nombre | Tablas núcleo |
+|--------|--------|---------------|
+| A | Inventario | `categorias_material` … `items_movimiento_inventario` |
+| B | Productos | `categorias_producto` … `tecnicas_producto` |
+| C | Recetas y costos | `recetas_producto` … `categorias_costo` |
+| D | Clientes y pedidos | `clientes` … `historial_estado_pedido` |
+| E | Producción | `ordenes_produccion` … `asientos_costo_produccion` |
+| F | Compras | `proveedores`, `compras`, `items_compra` |
+| G | Finanzas | `metodos_pago` … `movimientos_caja` |
 
-### Inventario y compras (Stage 3)
+## 3. Cliente desktop (`desktop/`)
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| CRUD | `/api/v1/categorias-material` | Categorías de material |
-| CRUD | `/api/v1/unidades-medida` | Unidades de medida |
-| CRUD | `/api/v1/bodegas` | Bodegas |
-| CRUD | `/api/v1/materiales` | Materiales (+ stock apertura vía AJUSTE) |
-| GET | `/api/v1/materiales/alertas-stock-bajo` | Stock &lt; mínimo |
-| GET | `/api/v1/existencias` | Consulta de existencias |
-| POST/GET | `/api/v1/movimientos-inventario` | Movimientos (entrada/salida/ajuste) |
-| POST | `/api/v1/movimientos-inventario/transferencias` | Par SALIDA/ENTRADA |
-| POST | `/api/v1/movimientos-inventario/{id}/confirmar` | Confirma BORRADOR |
-| CRUD | `/api/v1/proveedores` | Proveedores |
-| POST/GET | `/api/v1/compras` | Compras en BORRADOR |
-| POST | `/api/v1/compras/{id}/recibir` | Recepción → stock + promedio |
-| POST | `/api/v1/compras/{id}/cancelar` | Solo BORRADOR |
+| Carpeta | Rol |
+|---------|-----|
+| `api/` | Cliente HTTPX tipado |
+| `views/` | Pantallas por menú |
+| `components/` / `dialogs/` | Tablas, forms, toasts, charts |
+| `styles/` | Paleta (sidebar `#172033`, primary `#2563EB`, …) |
+| `utils/async_ui.py` | HTTP fuera del hilo UI |
 
-### Productos y recetas (Stage 4)
+Menú: GENERAL · VENTAS · PRODUCCIÓN · INVENTARIO · FINANZAS · REPORTES · CONFIGURACIÓN.
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| CRUD | `/api/v1/categorias-producto` | Categorías de producto |
-| POST/GET/PATCH | `/api/v1/productos` | Productos `FABRICADO\|REVENTA\|SERVICIO` |
-| GET | `/api/v1/productos/{id}/costo-estimado` | Costo unitario estimado (§5.4) |
-| POST/GET/PATCH | `/api/v1/variantes-producto` | Variantes (SKU único) |
-| CRUD | `/api/v1/tecnicas-produccion` | Técnicas de producción |
-| POST/GET/DELETE | `/api/v1/tecnicas-producto` | Vínculo producto–técnica (unique) |
-| CRUD | `/api/v1/categorias-costo` | Categorías de costo |
-| POST/GET | `/api/v1/recetas-producto` | Recetas versionadas + ítems |
-| POST | `/api/v1/recetas-producto/{id}/activar` | Activa versión (desactiva hermanas) |
-| POST/GET | `/api/v1/perfiles-costo-producto` | Perfiles históricos (`vigente_desde`) |
-| POST | `/api/v1/perfiles-costo-producto/{id}/activar` | Activa perfil del alcance |
+## 4. Transacciones y dinero
 
-### Clientes y pedidos (Stage 5)
+Operaciones multi-tabla (recepción de compra, consumo de OP, pago confirmado + caja, entrega REVENTA, cierre de OP, transferencias) corren en **una** transacción SQLAlchemy. Cualquier error → rollback completo.
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| CRUD | `/api/v1/clientes` | Clientes (DELETE = baja lógica) |
-| POST/GET/PATCH | `/api/v1/pedidos` | Pedidos con ítems, descuento monto, totales |
-| POST | `/api/v1/pedidos/{id}/estado` | Transición validada + historial |
-| POST | `/api/v1/pedidos/{id}/cancelar` | → `CANCELADO` |
-| GET | `/api/v1/pedidos/{id}/historial-estados` | Historial de estados |
-| GET | `/api/v1/pedidos/{id}/saldo` | `total − pagos CONFIRMADOS` |
-| POST/GET | `/api/v1/pedidos/{id}/disenos` | Diseños (`ruta_archivo`, versiones) |
-| PATCH | `/api/v1/pedidos/disenos/{id}` | Estado de aprobación |
-| CRUD | `/api/v1/metodos-pago` | Catálogo de métodos (DELETE = baja lógica) |
-| CRUD | `/api/v1/cuentas-caja` | Cuentas de caja + `/saldos` y `/{id}/saldo` |
-| POST/GET | `/api/v1/pagos` | Anticipos/pagos de pedido |
-| POST | `/api/v1/pagos/{id}/confirmar` | → `CONFIRMADO` + `movimientos_caja` (idempotente) |
-| POST | `/api/v1/pagos/{id}/anular` | Anula `PENDIENTE` o `CONFIRMADO` (revierte caja) |
+| Concepto | BD | Python |
+|----------|-----|--------|
+| Dinero | `NUMERIC(14,2)` | `Decimal` |
+| Cantidades | `NUMERIC(14,4)` | `Decimal` |
+| Porcentajes | `NUMERIC(5,2)` | `Decimal` |
 
-### Órdenes de producción (Stage 6)
+**Prohibido:** `float` para dinero o stock en Services/cálculos. Redondeo: **ROUND_HALF_UP** (`money_round` / `qty_round`).
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST/GET | `/api/v1/ordenes-produccion` | Crear OP desde pedido (ítems FABRICADO) / listar |
-| GET | `/api/v1/ordenes-produccion/{id}` | Detalle con consumos y asientos |
-| GET | `/api/v1/ordenes-produccion/{id}/materiales-requeridos` | Receta activa + disponibilidad (`bodega_id`) |
-| POST | `/api/v1/ordenes-produccion/{id}/iniciar` | `PLANIFICADA` → `EN_PROCESO` |
-| POST | `/api/v1/ordenes-produccion/{id}/cancelar` | Cancelar sin consumos (reversos diferidos) |
-| POST | `/api/v1/ordenes-produccion/{id}/completar` | Cierre + consolidación MATERIAL REAL + PT opcional |
-| POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/consumos` | Consumo/desperdicio → movimiento único |
-| POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/asientos-costo` | Costos REAL no material |
-| POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/cantidades` | Producida/rechazada (+ entrada PT si aplica) |
-| GET | `/api/v1/ordenes-produccion/{id}/comparacion-costos` | ESTIMADO vs REAL |
+## 5. Acoplamientos
 
-### Finanzas (Stage 7)
+**Permitidos (dirección preferida):** compras → inventario; producción → inventario/recetas/pedidos; finanzas → pedidos/compras; productos/recetas → materiales.
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| CRUD | `/api/v1/categorias-gasto` | Categorías de gasto operativo |
-| POST/GET/PATCH | `/api/v1/gastos` | Gastos + `estado_pago` (`NO_PAGADO\|PARCIAL\|PAGADO\|ANULADO`) |
-| POST | `/api/v1/gastos/{id}/anular` | Anula gasto sin pagos CONFIRMADOS |
-| POST/GET | `/api/v1/pagos-gasto` | Pagos parciales de gasto → caja `SALIDA` |
-| POST | `/api/v1/pagos-gasto/{id}/confirmar\|anular` | Confirmar (idempotente) / anular |
-| POST/GET | `/api/v1/pagos-proveedor` | Pagos parciales a compras → caja `SALIDA` |
-| GET | `/api/v1/pagos-proveedor/saldo/{compra_id}` | Saldo pendiente proveedor |
-| GET | `/api/v1/movimientos-caja` | Consulta (generados por pagos; 1 origen) |
-| GET | `/api/v1/finanzas/cuentas-por-cobrar` | Pedidos con saldo > 0 |
-| GET | `/api/v1/finanzas/cuentas-por-pagar` | Compras con saldo > 0 |
-| GET | `/api/v1/finanzas/resumen` | Ventas vs cobrado vs CxC; utilidad bruta/operativa (§5.10) |
+**Prohibidos:** desktop → PG; routers con lógica de promedio/saldos; finanzas creando `existencias` directo; pedidos descontando materiales al crear; borrar movimientos `CONFIRMADO`; OP sin `pedido_id` en V1.
 
-### Reportes y dashboard (Stage 9)
+## 6. Seguridad (V1)
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/api/v1/reportes/ventas/diarias` | Ventas ENTREGADAS por día |
-| GET | `/api/v1/reportes/ventas/mensuales` | Ventas ENTREGADAS por mes |
-| GET | `/api/v1/reportes/productos-mas-vendidos` | Top productos (cantidad) |
-| GET | `/api/v1/reportes/utilidad-por-producto` | Utilidad/margen estimado por producto |
-| GET | `/api/v1/reportes/rentabilidad-pedidos` | Rentabilidad por pedido ENTREGADO |
-| GET | `/api/v1/reportes/costos-produccion` | Asientos ESTIMADO/REAL |
-| GET | `/api/v1/reportes/costos-por-categoria` | Costos agregados por `tipo_costo` |
-| GET | `/api/v1/reportes/compras` | Compras no canceladas |
-| GET | `/api/v1/reportes/gastos` | Gastos operativos (excl. ligados a OP) |
-| GET | `/api/v1/reportes/inventario-valorizado` | Existencias × costo_promedio |
-| GET | `/api/v1/reportes/consumo-materiales` | Consumos de producción |
-| GET | `/api/v1/reportes/desperdicios` | Consumos `es_desperdicio` |
-| GET | `/api/v1/reportes/cuentas-pendientes` | Wrapper CxC/CxP Stage 7 |
-| GET | `/api/v1/reportes/dashboard` | KPIs + series para gráficos |
-| GET | `/api/v1/reportes/export/{tipo}` | CSV/PDF: `ventas`, `inventario-valorizado`, `rentabilidad-pedidos`, `resumen-financiero` |
+Sin auth multi-usuario. Reservado en `core/config` para fases posteriores. Diseños: solo rutas en `DESIGNS_ROOT`, no binarios en BD.
+
+## 7. Testing
+
+| Nivel | Enfoque |
+|-------|---------|
+| Unitario Services | Decimal, saldos, promedio |
+| API | HTTPX / TestClient, contratos español |
+| Integración + E2E | PostgreSQL de prueba; escenario vaso sublimable Stage 10 |
+| UI | Smoke manual Stages 8–9 |
+
+## 8. Fuera de alcance V1
+
+- SQLite como BD principal  
+- Microservicios / event bus distribuido  
+- Agentes / LLM dentro de la app  
+- OP interna sin pedido de cliente  
+- Auth multi-usuario  
+
+Resumen de endpoints: [`api.md`](api.md).

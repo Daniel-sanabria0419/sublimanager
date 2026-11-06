@@ -1,7 +1,8 @@
-# Diccionario de datos — extracto Stage 2
+# Diccionario de datos — extracto V1
 
-Fuente canónica (Project store): `docs/database.md` Stage 0 **APROBADO**.
-Este archivo resume lo materializado en migraciones Alembic.
+Fuente completa: [`diccionario-datos.md`](diccionario-datos.md).  
+Diagrama ER: [`er-diagrama.md`](er-diagrama.md).  
+Nomenclatura: [`nomenclatura.md`](nomenclatura.md).
 
 ## Convenciones de tipos
 
@@ -21,9 +22,7 @@ Este archivo resume lo materializado en migraciones Alembic.
 | `20261106_0001` | Stub vacío (Stage 1) |
 | `20261106_0002` | 36 tablas + CHECKs / FKs / índices (Stage 2) |
 
-Orden lógico interno de `20261106_0002` (lotes 1–9): catálogos → productos →
-materiales → compras/inventario → recetas → pedidos → producción →
-gastos/asientos → pagos/caja. Ver docstring de la revisión Alembic.
+Orden lógico interno de `20261106_0002`: catálogos → productos → materiales → compras/inventario → recetas → pedidos → producción → gastos/asientos → pagos/caja.
 
 ## Decisiones V1 congeladas
 
@@ -49,4 +48,4 @@ backend/app/models/
 └── finanzas/         # módulo G (8)
 ```
 
-Lista completa de tablas: [`nomenclatura.md`](nomenclatura.md).
+Lista de tablas: [`nomenclatura.md`](nomenclatura.md).

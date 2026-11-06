@@ -1,10 +1,16 @@
 # Guía de instalación — SubliManager V1
 
+Instalación desde cero para desarrollo u operación local. Para el día a día tras instalar, ver [`ejecucion.md`](ejecucion.md).
+
 ## Requisitos
 
-- Python **3.12+**
-- PostgreSQL **16+** (recomendado vía Docker Compose)
-- Git
+| Componente | Requisito |
+|------------|-----------|
+| Python | **3.12+** (`python3.12`) |
+| PostgreSQL | **16+** (recomendado vía Docker Compose) |
+| Git | Para clonar el repositorio |
+| Docker Compose | Opcional pero recomendado |
+| Tk (desktop) | En Debian/Ubuntu: `sudo apt install python3-tk` |
 
 ## 1. Clonar y entorno virtual
 
@@ -14,87 +20,132 @@ cd sublimanager
 python3.12 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r backend/requirements.txt
+pip install -r desktop/requirements.txt
 ```
 
 ## 2. Variables de entorno
 
 ```bash
 cp .env.example .env
-# Editar DATABASE_URL si hace falta
 ```
 
-## 3. PostgreSQL local (Docker Compose)
+Variables relevantes (valores por defecto del ejemplo):
+
+| Variable | Uso | Ejemplo |
+|----------|-----|---------|
+| `DATABASE_URL` | SQLAlchemy + Psycopg 3 | `postgresql+psycopg://sublimanager:sublimanager@localhost:5432/sublimanager` |
+| `API_HOST` / `API_PORT` | Bind de Uvicorn | `0.0.0.0` / `8000` |
+| `DESIGNS_ROOT` | Carpeta de archivos de diseño (rutas, no binarios en BD) | `./data/disenos` |
+| `SUBLIMANAGER_API_URL` | URL base que usa el desktop | `http://127.0.0.1:8000` |
+| `TEST_DATABASE_URL` | Solo tests de integración (opcional) | misma URL con BD `_test` |
+
+No commitear `.env` con secretos reales.
+
+## 3. PostgreSQL
+
+### Opción A — Docker Compose (recomendada)
 
 ```bash
 docker compose up -d
+docker compose ps   # healthcheck pg_isready
 ```
 
-Credenciales por defecto (alineadas con `.env.example`):
+Credenciales alineadas con `.env.example`:
 
-| Variable | Valor |
-|----------|-------|
+| Campo | Valor |
+|-------|-------|
 | Usuario | `sublimanager` |
 | Contraseña | `sublimanager` |
 | Base | `sublimanager` |
 | Puerto | `5432` |
+| Volumen | `sublimanager_pgdata` |
 
-Sin Docker, cree una base PostgreSQL equivalente y ajuste `DATABASE_URL`.
+### Opción B — PostgreSQL nativo
+
+Cree un rol y una base equivalentes y ajuste `DATABASE_URL`. Ejemplo:
+
+```sql
+CREATE USER sublimanager WITH PASSWORD 'sublimanager';
+CREATE DATABASE sublimanager OWNER sublimanager;
+```
+
+SQLite **no** está permitido como BD principal.
 
 ## 4. Migraciones Alembic
 
-Desde la raíz del repo (con el venv activo y `.env` cargado):
-
-```bash
-cd backend
-export PYTHONPATH=.
-alembic upgrade head
-```
-
-O:
+Con el venv activo y PostgreSQL accesible:
 
 ```bash
 ./scripts/run_migrations.sh
 ```
 
-`alembic upgrade head` aplica `20261106_0001` (stub) + `20261106_0002`
-(36 tablas de negocio, CHECKs e índices). Ver [`database.md`](database.md).
+Equivale a `alembic upgrade head` desde `backend/` con `PYTHONPATH` correcto.
+
+| Revisión | Contenido |
+|----------|-----------|
+| `20261106_0001` | Stub vacío (Stage 1) |
+| `20261106_0002` | **36 tablas** de negocio + CHECKs, FKs e índices |
+
+Detalle del schema: [`diccionario-datos.md`](diccionario-datos.md).
 
 ## 5. Arrancar la API
 
 ```bash
-cd backend
-export PYTHONPATH=.
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+./scripts/run_api.sh
 ```
-
-O: `./scripts/run_api.sh`
 
 Comprobar:
 
-- `GET http://localhost:8000/health` → `200` (`estado: ok`)
-- `GET http://localhost:8000/health/db` → `200` si PostgreSQL responde
-
-Documentación interactiva: `http://localhost:8000/docs`
-
-## 6. Tests
-
 ```bash
-cd backend
-export PYTHONPATH=.
-pytest -q
+curl -s http://localhost:8000/health
+curl -s http://localhost:8000/health/db
 ```
 
-Los tests de BD se **omiten** si no existe `TEST_DATABASE_URL`. Para forzarlos:
+- OpenAPI interactivo: http://localhost:8000/docs  
+- ReDoc: http://localhost:8000/redoc  
+
+## 6. Cliente desktop
+
+En **otra terminal** (mismo venv):
 
 ```bash
-export TEST_DATABASE_URL=postgresql+psycopg://sublimanager:sublimanager@localhost:5432/sublimanager
-pytest -q
+export SUBLIMANAGER_API_URL=http://127.0.0.1:8000   # opcional si ya está en .env
+python -m desktop.main
 ```
 
-## Notas de arquitectura (Stage 1)
+El cliente solo habla REST (HTTPX). Ver [`../desktop/README.md`](../desktop/README.md).
 
-- Backend FastAPI desacoplado del desktop CustomTkinter.
-- PostgreSQL es la única BD principal (no SQLite).
-- Identificadores de producto/schema/API en **español** (`pedidos`, `bodegas`,
-  `ordenes_produccion`, …) — ver [`nomenclatura.md`](nomenclatura.md); stack en inglés.
-- Sin lógica de inventario, productos ni pedidos en esta etapa (ni las 36 tablas).
+## 7. Carpeta de diseños
+
+```bash
+mkdir -p data/disenos
+```
+
+Los diseños de pedido guardan `ruta_archivo` (referencia), no el binario en PostgreSQL.
+
+## 8. Tests (opcional en instalación)
+
+```bash
+# Crear BD de prueba si usa Docker:
+docker compose exec postgres psql -U sublimanager -c "CREATE DATABASE sublimanager_test;"
+
+TEST_DATABASE_URL=postgresql+psycopg://sublimanager:sublimanager@localhost:5432/sublimanager_test \
+  ./scripts/run_tests.sh
+```
+
+Sin `TEST_DATABASE_URL`, los tests que requieren BD se omiten.
+
+## Checklist post-instalación
+
+1. `docker compose ps` → Postgres healthy  
+2. `./scripts/run_migrations.sh` → sin error  
+3. `GET /health` y `GET /health/db` → 200  
+4. `python -m desktop.main` → shell ERP con indicador de API  
+5. Abrir http://localhost:8000/docs y listar un catálogo (p. ej. bodegas)
+
+## Documentación relacionada
+
+- [`ejecucion.md`](ejecucion.md) — operación diaria  
+- [`backups.md`](backups.md) — respaldo / recuperación  
+- [`api.md`](api.md) — referencia REST  
+- [`manual-usuario.md`](manual-usuario.md) — flujos de negocio  
