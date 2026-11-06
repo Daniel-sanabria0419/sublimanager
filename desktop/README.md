@@ -1,6 +1,6 @@
-# Desktop SubliManager (Etapa 8)
+# Desktop SubliManager (Etapa 8–9)
 
-Cliente ERP de escritorio con **CustomTkinter**. Toda la lógica de negocio vive en el backend; este cliente solo habla REST vía HTTPX.
+Cliente ERP de escritorio con **CustomTkinter** + **Matplotlib**. Toda la lógica de negocio vive en el backend; este cliente solo habla REST vía HTTPX.
 
 ## Requisitos
 
@@ -33,7 +33,7 @@ desktop/
 ├── main.py              # punto de entrada
 ├── app.py               # shell: sidebar + top bar
 ├── api/client.py        # HTTPX (sin SQLAlchemy / sin DB)
-├── components/          # tablas, botones, cards, toasts
+├── components/          # tablas, botones, cards, charts, toasts
 ├── dialogs/             # formularios y confirmaciones
 ├── styles/theme.py      # paleta §6
 ├── utils/async_ui.py    # HTTP fuera del hilo UI
@@ -42,7 +42,9 @@ desktop/
 
 ## Menú
 
-GENERAL · VENTAS · PRODUCCIÓN · INVENTARIO · FINANZAS · REPORTES (stub Etapa 9) · CONFIGURACIÓN
+GENERAL · VENTAS · PRODUCCIÓN · INVENTARIO · FINANZAS · REPORTES · CONFIGURACIÓN
+
+Dashboard consume `/api/v1/reportes/dashboard` (KPIs + 5 gráficos). Reportes lista agregados reales y exporta CSV/PDF.
 
 ## Reglas
 

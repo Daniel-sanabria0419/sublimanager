@@ -2,7 +2,7 @@
 
 ERP de sublimación (V1): backend FastAPI + PostgreSQL y cliente desktop CustomTkinter desacoplados por REST.
 
-**Etapa actual:** Stage 8 — Frontend CustomTkinter (shell ERP + CRUD operativo contra la API REST).
+**Etapa actual:** Stage 9 — Reportes y dashboard (KPIs, gráficos Matplotlib, exportación CSV/PDF).
 
 ## Stack
 

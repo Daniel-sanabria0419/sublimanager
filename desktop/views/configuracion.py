@@ -196,23 +196,3 @@ def build_cuentas_view(master, api: ApiClient, toast: ToastHost) -> CrudListView
     primary_button(view.toolbar, "Nueva bodega", command=nueva_bodega).pack(side="left", padx=(8, 0))
     return view
 
-
-def build_reportes_stub(master, api: ApiClient, toast: ToastHost) -> BaseView:
-    view = BaseView(
-        master,
-        api,
-        toast,
-        title="Reportes",
-        subtitle="Etapa 9 — gráficos y exportaciones",
-    )
-    ctk.CTkLabel(
-        view.body,
-        text=(
-            "Los reportes detallados y gráficos Matplotlib se implementan en la Etapa 9.\n"
-            "Use Finanzas → Resumen y el Dashboard para KPIs ya disponibles vía API."
-        ),
-        font=theme.FONT_BODY,
-        text_color=theme.TEXT_MUTED,
-        justify="left",
-    ).pack(anchor="w", pady=20)
-    return view

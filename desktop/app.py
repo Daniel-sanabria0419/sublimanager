@@ -17,6 +17,7 @@ from desktop.views import (
     pedidos,
     produccion,
     productos,
+    reportes,
 )
 
 
@@ -152,7 +153,7 @@ class SubliManagerApp(ctk.CTk):
             "cuentas_por_cobrar": finanzas.build_cxc_view,
             "cuentas_por_pagar": finanzas.build_cxp_view,
             "caja": finanzas.build_caja_view,
-            "reportes": configuracion.build_reportes_stub,
+            "reportes": reportes.build_reportes_view,
             "datos_negocio": configuracion.build_datos_negocio_view,
             "categorias": configuracion.build_categorias_view,
             "unidades": configuracion.build_unidades_view,

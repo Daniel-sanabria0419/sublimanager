@@ -246,6 +246,87 @@ class ApiClient:
     def resumen_financiero(self, **params: Any) -> dict:
         return self.get("/finanzas/resumen", **params)
 
+    # ---- Reportes Stage 9 ----
+    def dashboard_reportes(self, **params: Any) -> dict:
+        return self.get("/reportes/dashboard", **params)
+
+    def reporte_ventas_diarias(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/ventas/diarias", **params)
+
+    def reporte_ventas_mensuales(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/ventas/mensuales", **params)
+
+    def reporte_productos_mas_vendidos(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/productos-mas-vendidos", **params)
+
+    def reporte_utilidad_por_producto(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/utilidad-por-producto", **params)
+
+    def reporte_rentabilidad_pedidos(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/rentabilidad-pedidos", **params)
+
+    def reporte_costos_produccion(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/costos-produccion", **params)
+
+    def reporte_costos_por_categoria(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/costos-por-categoria", **params)
+
+    def reporte_compras(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/compras", **params)
+
+    def reporte_gastos(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/gastos", **params)
+
+    def reporte_inventario_valorizado(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/inventario-valorizado", **params)
+
+    def reporte_consumo_materiales(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/consumo-materiales", **params)
+
+    def reporte_desperdicios(self, **params: Any) -> list[dict]:
+        return self.get("/reportes/desperdicios", **params)
+
+    def reporte_cuentas_pendientes(self, **params: Any) -> dict:
+        return self.get("/reportes/cuentas-pendientes", **params)
+
+    def exportar_reporte(self, tipo: str, *, formato: str = "csv") -> tuple[bytes, str]:
+        """Descarga CSV/PDF; retorna (contenido, nombre_sugerido)."""
+        path = self._v1(f"/reportes/export/{tipo}")
+        try:
+            response = self._client.get(path, params={"formato": formato})
+        except httpx.ConnectError as exc:
+            raise ApiError(
+                "No se pudo conectar con la API. ¿Está corriendo el backend en "
+                f"{self.base_url}?"
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise ApiError("La API no respondió a tiempo.") from exc
+        except httpx.HTTPError as exc:
+            raise ApiError(f"Error de red: {exc}") from exc
+
+        if not response.is_success:
+            detail: Any
+            try:
+                detail = response.json()
+            except ValueError:
+                detail = response.text
+            payload = None
+            if isinstance(detail, dict):
+                payload = detail.get("detalle", detail.get("detail", detail))
+            else:
+                payload = detail
+            raise ApiError(
+                _format_detail(payload),
+                status_code=response.status_code,
+                detail=detail,
+            )
+
+        filename = f"reporte-{tipo}.{formato}"
+        cd = response.headers.get("content-disposition") or ""
+        if "filename=" in cd:
+            filename = cd.split("filename=")[-1].strip().strip('"')
+        return response.content, filename
+
     def listar_metodos_pago(self, **params: Any) -> list[dict]:
         return self.get("/metodos-pago", **params)
 
