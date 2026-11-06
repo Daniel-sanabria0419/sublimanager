@@ -1,29 +1,34 @@
-# Nomenclatura en español — referencia Stage 1
+# Nomenclatura en español — SubliManager V1
 
-Espejo condensado de `nomenclatura-es.md` y `database.md` del Project store
-(Stage 0 **aprobado**). Stage 2 materializa las 36 tablas vía Alembic
-(`20261106_0002`); esta guía fija el idioma de schema, API y UI.
+Convención **congelada** para schema PostgreSQL, API, UI y docs de negocio. El stack tecnológico permanece en inglés (FastAPI, SQLAlchemy, Alembic, CustomTkinter, PostgreSQL, Pytest, HTTPX). Tipos SQL (`BIGINT`, `NUMERIC`, `TIMESTAMPTZ`, …) se mantienen.
 
-## Reglas
+## Reglas generales
 
 | Elemento | Forma |
 |----------|--------|
-| Tablas / columnas SQL | `snake_case` español, **sin acentos ni ñ** |
+| Identificadores SQL | `snake_case` español, **sin acentos ni ñ** |
 | Tablas | Plural (`pedidos`, `materiales`, `bodegas`) |
-| FK | Sufijo `_id` (`pedido_id`, `bodega_id`) |
-| Timestamps | Sufijo `_en` (`creado_en`, `actualizado_en`) |
+| Columnas | Singular descriptivo (`nombre`, `fecha_pedido`, `monto`) |
+| FK | Sufijo `_id` (`pedido_id`, `bodega_id`, `cliente_id`) |
+| PK | Siempre `id BIGINT` |
+| Booleanos | `activo`, `control_stock`, `es_desperdicio` |
+| Timestamps | Sufijo `_en` (`creado_en`, `actualizado_en`, `cambiado_en`) |
 | Enums / estados | `UPPER_SNAKE` español (`PENDIENTE`, `EN_PRODUCCION`) |
-| Paths API | `/api/v1/` + plural kebab-case español |
-| Stack tecnológico | Inglés (FastAPI, SQLAlchemy, PostgreSQL, …) |
+| Paths API | `/api/v1/` + plural **kebab-case** español |
+| JSON | Mismos nombres que columnas |
 
-## Ejemplos de paths (Stage 2+)
+## Paths (ejemplos)
 
 - `/api/v1/pedidos`
 - `/api/v1/ordenes-produccion`
 - `/api/v1/movimientos-inventario`
 - `/api/v1/cuentas-caja`
+- `/api/v1/pagos-proveedor`
+- `/api/v1/reportes/dashboard`
 
-## Tablas V1 (36) — nombres congelados
+Lista completa: [`api.md`](api.md).
+
+## Tablas V1 (36)
 
 | Módulo | Tablas |
 |--------|--------|
@@ -35,19 +40,31 @@ Espejo condensado de `nomenclatura-es.md` y `database.md` del Project store
 | F Compras | `proveedores`, `compras`, `items_compra` |
 | G Finanzas | `metodos_pago`, `cuentas_caja`, `pagos`, `categorias_gasto`, `gastos`, `pagos_gasto`, `pagos_proveedor`, `movimientos_caja` |
 
-## Decisiones V1 relevantes
+Formas elegidas: `bodegas` (no almacenes), `existencias` (no stocks), `items_*` (no `lineas_*`).
 
-- `ordenes_produccion.pedido_id` es **NOT NULL** (OP sin pedido → fase posterior).
-- Adiciones en las mismas 36 tablas (no tabla #37):  
-  `movimientos_inventario.estado`, `movimientos_inventario.grupo_transferencia_id`.
-- Formas elegidas: `bodegas` (no almacenes), `existencias` (no stocks).
+## Decisiones V1
 
-## Enums (muestra)
+- `ordenes_produccion.pedido_id` es **NOT NULL** (OP sin pedido → fase posterior).  
+- En las mismas 36 tablas (no tabla #37): `movimientos_inventario.estado`, `movimientos_inventario.grupo_transferencia_id`.  
+- `pedidos.descuento` = monto monetario.  
+- Columna `sku` permanece en inglés (código internacional).
+
+## Enums aprobados
 
 | Dominio | Valores |
 |---------|---------|
 | `pedidos.estado` | `PENDIENTE`, `CONFIRMADO`, `DISENO`, `ESPERANDO_APROBACION`, `EN_PRODUCCION`, `LISTO`, `ENTREGADO`, `CANCELADO` |
 | `productos.tipo_producto` | `FABRICADO`, `REVENTA`, `SERVICIO` |
-| `ordenes_produccion.estado` | `PLANIFICADA`, `EN_PROCESO`, `COMPLETADA`, `CANCELADA` |
+| `movimientos_inventario.tipo_movimiento` | `COMPRA`, `PRODUCCION`, `AJUSTE`, `DESPERDICIO`, `DEVOLUCION`, `TRANSFERENCIA_ENTRADA`, `TRANSFERENCIA_SALIDA`, `VENTA`, `REVERSO` |
 | `movimientos_inventario.estado` | `BORRADOR`, `CONFIRMADO`, `ANULADO` |
+| `ordenes_produccion.estado` | `PLANIFICADA`, `EN_PROCESO`, `COMPLETADA`, `CANCELADA` |
+| `disenos_pedido.estado_aprobacion` | `BORRADOR`, `PENDIENTE_APROBACION`, `APROBADO`, `RECHAZADO` |
 | Pagos (`pagos.estado`, …) | `PENDIENTE`, `CONFIRMADO`, `ANULADO` |
+| `gastos.estado_pago` | `NO_PAGADO`, `PARCIAL`, `PAGADO`, `ANULADO` |
+| `compras.estado` | `BORRADOR`, `RECIBIDA`, `PARCIALMENTE_RECIBIDA`, `CANCELADA` |
+| `cuentas_caja.tipo_cuenta` | `EFECTIVO`, `BANCO`, `BILLETERA_DIGITAL`, `OTRO` |
+| `movimientos_caja.tipo_movimiento` | `ENTRADA`, `SALIDA` |
+| `categorias_costo.tipo_costo` | `MATERIAL`, `MANO_OBRA`, `ELECTRICIDAD`, `DEPRECIACION`, `MANTENIMIENTO`, `EMPAQUE`, `OTRO` |
+| `asientos_costo_produccion.etapa_costo` | `ESTIMADO`, `REAL` |
+
+Diccionario detallado: [`diccionario-datos.md`](diccionario-datos.md). Diagrama ER: [`er-diagrama.md`](er-diagrama.md).
