@@ -53,9 +53,11 @@ TEST_DATABASE_URL=postgresql+psycopg://sublimanager:sublimanager@localhost:5432/
 
 ## Convenciones
 
-- Identificadores de producto/schema/UI en **español** (docs humanas en español).
+- Identificadores de producto/schema/UI/API en **español** (`pedidos`, `bodegas`,
+  `ordenes_produccion`, …). Ver [`docs/nomenclatura.md`](docs/nomenclatura.md).
 - Nombres de stack tecnológico en inglés.
 - Sin secretos en el código; solo `.env.example` en el repo.
+- Stage 1 no crea las 36 tablas; eso es Stage 2.
 
 ## Licencia / autor
 

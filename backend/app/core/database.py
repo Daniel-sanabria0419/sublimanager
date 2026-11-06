@@ -10,7 +10,11 @@ from app.core.config import get_settings
 
 
 class Base(DeclarativeBase):
-    """Base declarativa para modelos SQLAlchemy (Stage 2+)."""
+    """Base declarativa para modelos SQLAlchemy.
+
+    Stage 2 registrará las 36 tablas en español
+    (`materiales`, `pedidos`, `ordenes_produccion`, …).
+    """
 
 
 def _crear_engine() -> Engine:

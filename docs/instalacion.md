@@ -94,5 +94,6 @@ pytest -q
 
 - Backend FastAPI desacoplado del desktop CustomTkinter.
 - PostgreSQL es la única BD principal (no SQLite).
-- Identificadores de producto/schema en **español** (ver nomenclatura del Project store); stack en inglés.
-- Sin lógica de inventario, productos ni pedidos en esta etapa.
+- Identificadores de producto/schema/API en **español** (`pedidos`, `bodegas`,
+  `ordenes_produccion`, …) — ver [`nomenclatura.md`](nomenclatura.md); stack en inglés.
+- Sin lógica de inventario, productos ni pedidos en esta etapa (ni las 36 tablas).

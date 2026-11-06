@@ -1,4 +1,5 @@
 Migraciones Alembic de SubliManager.
 
 Stage 1: revisión `20261106_0001` vacía (solo historial).
-Stage 2: 36 tablas en 10 lotes.
+Stage 2: 36 tablas en español (`materiales`, `pedidos`, `ordenes_produccion`, …)
+en 10 lotes. Nomenclatura: docs/nomenclatura.md.

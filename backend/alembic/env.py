@@ -8,7 +8,8 @@ from sqlalchemy import engine_from_config, pool
 from app.core.config import get_settings
 from app.core.database import Base
 
-# Importar modelos aquí en Stage 2+ para que metadata los registre:
+# Stage 2+: importar modelos en español (materiales, pedidos, ordenes_produccion, …)
+# para que Base.metadata registre las 36 tablas. Ver docs/nomenclatura.md.
 # import app.models  # noqa: F401
 
 config = context.config
