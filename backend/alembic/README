@@ -1,0 +1,4 @@
+Migraciones Alembic de SubliManager.
+
+Stage 1: revisión `20261106_0001` vacía (solo historial).
+Stage 2: 36 tablas en 10 lotes.
