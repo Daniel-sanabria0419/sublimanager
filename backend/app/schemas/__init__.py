@@ -1,1 +1,5 @@
-"""Esquemas Pydantic 2 (DTOs) — stubs en Stage 1."""
+"""Schemas Pydantic (DTOs) en español."""
+
+from app.schemas import compras, inventario
+
+__all__ = ["compras", "inventario"]
