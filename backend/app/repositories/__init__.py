@@ -1,6 +1,12 @@
 """Repositorios de persistencia."""
 
 from app.repositories.compras import CompraRepo, ItemCompraRepo, ProveedorRepo
+from app.repositories.finanzas import (
+    CuentaCajaRepo,
+    MetodoPagoRepo,
+    MovimientoCajaRepo,
+    PagoRepo,
+)
 from app.repositories.inventario import (
     BodegaRepo,
     CategoriaMaterialRepo,
@@ -9,6 +15,13 @@ from app.repositories.inventario import (
     MaterialRepo,
     MovimientoInventarioRepo,
     UnidadMedidaRepo,
+)
+from app.repositories.pedidos import (
+    ClienteRepo,
+    DisenoPedidoRepo,
+    HistorialEstadoPedidoRepo,
+    ItemPedidoRepo,
+    PedidoRepo,
 )
 from app.repositories.productos import (
     CategoriaProductoRepo,
@@ -29,13 +42,22 @@ __all__ = [
     "CategoriaCostoRepo",
     "CategoriaMaterialRepo",
     "CategoriaProductoRepo",
+    "ClienteRepo",
     "CompraRepo",
+    "CuentaCajaRepo",
+    "DisenoPedidoRepo",
     "ExistenciaRepo",
+    "HistorialEstadoPedidoRepo",
     "ItemCompraRepo",
     "ItemMovimientoRepo",
+    "ItemPedidoRepo",
     "ItemRecetaRepo",
     "MaterialRepo",
+    "MetodoPagoRepo",
+    "MovimientoCajaRepo",
     "MovimientoInventarioRepo",
+    "PagoRepo",
+    "PedidoRepo",
     "PerfilCostoProductoRepo",
     "ProductoRepo",
     "ProveedorRepo",

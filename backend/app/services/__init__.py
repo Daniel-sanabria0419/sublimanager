@@ -1,5 +1,6 @@
 """Services de dominio SubliManager."""
 
+from app.services.clientes import ClienteService
 from app.services.compras import CompraService, ProveedorService
 from app.services.costos import ProductoCostoService
 from app.services.inventario import (
@@ -8,6 +9,8 @@ from app.services.inventario import (
     MaterialService,
     MovimientoInventarioService,
 )
+from app.services.pagos import CuentaCajaService, MetodoPagoService, PagoService
+from app.services.pedidos import PedidoService
 from app.services.productos import (
     CategoriaProductoService,
     ProductoService,
@@ -25,10 +28,15 @@ __all__ = [
     "CatalogoInventarioService",
     "CategoriaCostoService",
     "CategoriaProductoService",
+    "ClienteService",
     "CompraService",
+    "CuentaCajaService",
     "ExistenciaService",
     "MaterialService",
+    "MetodoPagoService",
     "MovimientoInventarioService",
+    "PagoService",
+    "PedidoService",
     "PerfilCostoProductoService",
     "ProductoCostoService",
     "ProductoService",
