@@ -1,0 +1,25 @@
+"""Tabla `tecnicas_produccion`."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+from app.models.mixins import col_activo, col_id
+
+if TYPE_CHECKING:
+    from app.models.productos.tecnicas_producto import TecnicaProducto
+
+
+class TecnicaProduccion(Base):
+    __tablename__ = "tecnicas_produccion"
+
+    id: Mapped[int] = col_id()
+    nombre: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    activo: Mapped[bool] = col_activo()
+
+    productos: Mapped[list[TecnicaProducto]] = relationship(back_populates="tecnica")

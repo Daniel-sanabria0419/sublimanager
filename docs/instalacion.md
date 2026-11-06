@@ -1,4 +1,4 @@
-# Guía de instalación — SubliManager V1 (Stage 1)
+# Guía de instalación — SubliManager V1
 
 ## Requisitos
 
@@ -56,7 +56,8 @@ O:
 ./scripts/run_migrations.sh
 ```
 
-En Stage 1 la migración inicial es **vacía** (solo historial Alembic). Las 36 tablas llegan en Stage 2.
+`alembic upgrade head` aplica `20261106_0001` (stub) + `20261106_0002`
+(36 tablas de negocio, CHECKs e índices). Ver [`database.md`](database.md).
 
 ## 5. Arrancar la API
 

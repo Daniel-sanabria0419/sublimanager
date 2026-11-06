@@ -2,7 +2,7 @@
 
 ERP de sublimación (V1): backend FastAPI + PostgreSQL y cliente desktop CustomTkinter desacoplados por REST.
 
-**Etapa actual:** Stage 1 — Configuración del proyecto (bootstrap). Sin tablas de negocio ni lógica de inventario/productos/pedidos.
+**Etapa actual:** Stage 2 — Modelos y base de datos (36 tablas en español, Alembic, constraints). Services de negocio llegan en Stages 3–7.
 
 ## Stack
 
@@ -32,7 +32,7 @@ python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r backend/requirements.txt
 cp .env.example .env
 docker compose up -d          # PostgreSQL
-./scripts/run_migrations.sh   # Alembic (migración vacía Stage 1)
+./scripts/run_migrations.sh   # Alembic → head (36 tablas)
 ./scripts/run_api.sh          # http://localhost:8000
 ```
 
@@ -57,7 +57,8 @@ TEST_DATABASE_URL=postgresql+psycopg://sublimanager:sublimanager@localhost:5432/
   `ordenes_produccion`, …). Ver [`docs/nomenclatura.md`](docs/nomenclatura.md).
 - Nombres de stack tecnológico en inglés.
 - Sin secretos en el código; solo `.env.example` en el repo.
-- Stage 1 no crea las 36 tablas; eso es Stage 2.
+- Schema PostgreSQL: 36 tablas; ver [`docs/database.md`](docs/database.md)
+  y [`docs/nomenclatura.md`](docs/nomenclatura.md).
 
 ## Licencia / autor
 

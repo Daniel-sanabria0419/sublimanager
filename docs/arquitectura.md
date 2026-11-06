@@ -1,8 +1,7 @@
-# Arquitectura — resumen Stage 1
+# Arquitectura — resumen (Stage 2)
 
-Documento espejo condensado de la arquitectura V1. La fuente completa vive en el
-Project store (`docs/architecture.md`). Nomenclatura de schema/API: ver
-[`nomenclatura.md`](nomenclatura.md).
+Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
+[`nomenclatura.md`](nomenclatura.md). Schema: [`database.md`](database.md).
 
 ## Capas
 
@@ -20,13 +19,13 @@ Project store (`docs/architecture.md`). Nomenclatura de schema/API: ver
 3. Sin SQLite como BD principal.
 4. Identificadores de negocio (tablas, columnas, estados, UI, paths) en **español**
    (`pedidos`, `ordenes_produccion`, `bodegas`, `existencias`, …). Stack en inglés.
-5. `ordenes_produccion.pedido_id` será **NOT NULL** en V1 (cuando exista en Stage 2).
+5. `ordenes_produccion.pedido_id` es **NOT NULL** en V1.
 
 ## Layout del backend (`backend/app/`)
 
 - `core/` — config, database, exceptions, constants, logging
-- `models/` — stubs Stage 1; modelos SQLAlchemy de las 36 tablas en Stage 2
-- `schemas/` / `repositories/` / `services/` — stubs Stage 1
+- `models/` — 36 tablas SQLAlchemy 2.0 (paquetes A–G) + enums español
+- `schemas/` / `repositories/` / `services/` — stubs (Services en Stages 3–7)
 - `api/v1/` — routers (hoy: salud; luego `/pedidos`, `/ordenes-produccion`, …)
 - `utils/` — helpers puros
 
