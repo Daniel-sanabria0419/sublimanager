@@ -23,6 +23,12 @@ from app.repositories.pedidos import (
     ItemPedidoRepo,
     PedidoRepo,
 )
+from app.repositories.produccion import (
+    AsientoCostoProduccionRepo,
+    ConsumoProduccionRepo,
+    ItemOrdenProduccionRepo,
+    OrdenProduccionRepo,
+)
 from app.repositories.productos import (
     CategoriaProductoRepo,
     ProductoRepo,
@@ -38,24 +44,28 @@ from app.repositories.recetas import (
 )
 
 __all__ = [
+    "AsientoCostoProduccionRepo",
     "BodegaRepo",
     "CategoriaCostoRepo",
     "CategoriaMaterialRepo",
     "CategoriaProductoRepo",
     "ClienteRepo",
     "CompraRepo",
+    "ConsumoProduccionRepo",
     "CuentaCajaRepo",
     "DisenoPedidoRepo",
     "ExistenciaRepo",
     "HistorialEstadoPedidoRepo",
     "ItemCompraRepo",
     "ItemMovimientoRepo",
+    "ItemOrdenProduccionRepo",
     "ItemPedidoRepo",
     "ItemRecetaRepo",
     "MaterialRepo",
     "MetodoPagoRepo",
     "MovimientoCajaRepo",
     "MovimientoInventarioRepo",
+    "OrdenProduccionRepo",
     "PagoRepo",
     "PedidoRepo",
     "PerfilCostoProductoRepo",
