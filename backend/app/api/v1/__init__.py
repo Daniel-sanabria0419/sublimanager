@@ -15,6 +15,7 @@ from app.api.v1 import (
     materiales,
     metodos_pago,
     movimientos_inventario,
+    ordenes_produccion,
     pagos,
     pedidos,
     perfiles_costo_producto,
@@ -58,4 +59,6 @@ v1.include_router(pedidos.router)
 v1.include_router(metodos_pago.router)
 v1.include_router(cuentas_caja.router)
 v1.include_router(pagos.router)
+# Stage 6 — órdenes de producción
+v1.include_router(ordenes_produccion.router)
 api_router.include_router(v1)

@@ -1,4 +1,4 @@
-# Arquitectura — resumen (Stage 5)
+# Arquitectura — resumen (Stage 6)
 
 Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 [`nomenclatura.md`](nomenclatura.md). Schema: [`database.md`](database.md).
@@ -9,7 +9,7 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 |------|------------|-----|
 | Desktop | CustomTkinter + HTTPX | UI (Stage 8); stub en Stage 1 |
 | API | FastAPI / Uvicorn | Único canal REST (`/api/v1/…` en español) |
-| Dominio | Services Python | Reglas de negocio (Stage 3–5: inventario, productos, pedidos) |
+| Dominio | Services Python | Reglas de negocio (Stage 3–6: inventario, productos, pedidos, producción) |
 | Persistencia | SQLAlchemy 2.0 + Alembic + PostgreSQL (Psycopg 3) | Datos y migraciones |
 
 ## Invariantes
@@ -23,14 +23,16 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 7. Recetas y perfiles de costo son **históricos**: nueva versión/fila; no sobrescribir.
 8. Crear/editar pedido **no** descuenta inventario; `descuento` es monto; snapshots de precio/costo en `items_pedido`.
 9. Diseños de pedido guardan solo `ruta_archivo` (sin binarios en BD).
+10. Consumos de OP descuentan inventario **una sola vez** por consumo confirmado (`tipo_referencia=consumo_produccion`).
+11. Estados OP: `PLANIFICADA | EN_PROCESO | COMPLETADA | CANCELADA`; `produced + rejected ≤ planned`.
 
 ## Layout del backend (`backend/app/`)
 
 - `core/` — config, database, exceptions, constants, logging
 - `models/` — 36 tablas SQLAlchemy 2.0 (paquetes A–G) + enums español
-- `schemas/` — DTOs Pydantic (inventario, compras, productos, recetas, pedidos, finanzas mín.)
+- `schemas/` — DTOs Pydantic (inventario, compras, productos, recetas, pedidos, producción, finanzas mín.)
 - `repositories/` — persistencia sin orquestar multi-agregado
-- `services/` — autoridad de reglas §5.1–5.4 y §5.3/§5.8 (anticipos mínimos)
+- `services/` — autoridad de reglas §5.1–5.7 y §5.8 (anticipos mínimos)
 - `api/v1/` — routers REST en español
 - `utils/decimal_policy.py` — `money_round` / `qty_round` / promedio ponderado
 
@@ -94,3 +96,18 @@ Documento espejo condensado de la arquitectura V1. Nomenclatura de schema/API:
 | POST/GET | `/api/v1/pagos` | Anticipos/pagos de pedido |
 | POST | `/api/v1/pagos/{id}/confirmar` | → `CONFIRMADO` + `movimientos_caja` |
 | POST | `/api/v1/pagos/{id}/anular` | Anula `PENDIENTE` |
+
+### Órdenes de producción (Stage 6)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST/GET | `/api/v1/ordenes-produccion` | Crear OP desde pedido (ítems FABRICADO) / listar |
+| GET | `/api/v1/ordenes-produccion/{id}` | Detalle con consumos y asientos |
+| GET | `/api/v1/ordenes-produccion/{id}/materiales-requeridos` | Receta activa + disponibilidad (`bodega_id`) |
+| POST | `/api/v1/ordenes-produccion/{id}/iniciar` | `PLANIFICADA` → `EN_PROCESO` |
+| POST | `/api/v1/ordenes-produccion/{id}/cancelar` | Cancelar sin consumos (reversos diferidos) |
+| POST | `/api/v1/ordenes-produccion/{id}/completar` | Cierre + consolidación MATERIAL REAL + PT opcional |
+| POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/consumos` | Consumo/desperdicio → movimiento único |
+| POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/asientos-costo` | Costos REAL no material |
+| POST | `/api/v1/ordenes-produccion/{id}/items/{item_id}/cantidades` | Producida/rechazada (+ entrada PT si aplica) |
+| GET | `/api/v1/ordenes-produccion/{id}/comparacion-costos` | ESTIMADO vs REAL |

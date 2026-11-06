@@ -11,6 +11,7 @@ from app.services.inventario import (
 )
 from app.services.pagos import CuentaCajaService, MetodoPagoService, PagoService
 from app.services.pedidos import PedidoService
+from app.services.produccion import OrdenProduccionService
 from app.services.productos import (
     CategoriaProductoService,
     ProductoService,
@@ -35,6 +36,7 @@ __all__ = [
     "MaterialService",
     "MetodoPagoService",
     "MovimientoInventarioService",
+    "OrdenProduccionService",
     "PagoService",
     "PedidoService",
     "PerfilCostoProductoService",

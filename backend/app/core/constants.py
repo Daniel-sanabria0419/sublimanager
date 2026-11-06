@@ -8,7 +8,7 @@ API_V1_PREFIX = "/api/v1"
 HEALTH_PATH = "/health"
 HEALTH_DB_PATH = "/health/db"
 
-# Prefijos de recursos (Stage 3–5 implementados; 6–7 previstos).
+# Prefijos de recursos (Stage 3–6 implementados; 7 previsto).
 RUTAS_RECURSOS_V1 = {
     "categorias_material": f"{API_V1_PREFIX}/categorias-material",
     "unidades_medida": f"{API_V1_PREFIX}/unidades-medida",
