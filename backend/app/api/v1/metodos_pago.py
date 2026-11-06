@@ -1,10 +1,10 @@
-"""CRUD mínimo `/api/v1/metodos-pago` (soporte anticipos Stage 5)."""
+"""CRUD `/api/v1/metodos-pago`."""
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.finanzas import MetodoPagoCreate, MetodoPagoOut
+from app.schemas.finanzas import MetodoPagoCreate, MetodoPagoOut, MetodoPagoUpdate
 from app.services.pagos import MetodoPagoService
 
 router = APIRouter(prefix="/metodos-pago", tags=["metodos-pago"])
@@ -30,3 +30,17 @@ def listar(
 @router.get("/{metodo_id}", response_model=MetodoPagoOut)
 def obtener(metodo_id: int, db: Session = Depends(get_db)):
     return MetodoPagoService(db).obtener(metodo_id)
+
+
+@router.patch("/{metodo_id}", response_model=MetodoPagoOut)
+def actualizar(
+    metodo_id: int, payload: MetodoPagoUpdate, db: Session = Depends(get_db)
+):
+    return MetodoPagoService(db).actualizar(
+        metodo_id, **payload.model_dump(exclude_unset=True)
+    )
+
+
+@router.delete("/{metodo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar(metodo_id: int, db: Session = Depends(get_db)):
+    MetodoPagoService(db).eliminar(metodo_id)

@@ -5,18 +5,24 @@ from fastapi import APIRouter
 from app.api.v1 import (
     bodegas,
     categorias_costo,
+    categorias_gasto,
     categorias_material,
     categorias_producto,
     clientes,
     compras,
     cuentas_caja,
     existencias,
+    finanzas,
+    gastos,
     health,
     materiales,
     metodos_pago,
+    movimientos_caja,
     movimientos_inventario,
     ordenes_produccion,
     pagos,
+    pagos_gasto,
+    pagos_proveedor,
     pedidos,
     perfiles_costo_producto,
     productos,
@@ -61,4 +67,11 @@ v1.include_router(cuentas_caja.router)
 v1.include_router(pagos.router)
 # Stage 6 — órdenes de producción
 v1.include_router(ordenes_produccion.router)
+# Stage 7 — finanzas (extiende pagos/caja Stage 5)
+v1.include_router(categorias_gasto.router)
+v1.include_router(gastos.router)
+v1.include_router(pagos_gasto.router)
+v1.include_router(pagos_proveedor.router)
+v1.include_router(movimientos_caja.router)
+v1.include_router(finanzas.router)
 api_router.include_router(v1)

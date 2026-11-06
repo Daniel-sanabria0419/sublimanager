@@ -1,8 +1,7 @@
-"""PagoService — anticipos/pagos de pedidos (§5.8, mínimo Stage 5).
+"""PagoService — anticipos/pagos de pedidos (§5.8) + catálogos de pago/caja.
 
-saldo = total − Σ pagos CONFIRMADOS.
-Al confirmar: genera exactamente un movimientos_caja ENTRADA.
-No implementa gastos ni módulo de caja completo (Stage 7).
+Stage 7: CRUD completo de métodos/cuentas; anulación de CONFIRMADO
+(elimina movimiento_caja asociado); confirmación idempotente.
 """
 
 from __future__ import annotations
@@ -59,11 +58,38 @@ class MetodoPagoService:
     def obtener(self, id_: int) -> MetodoPago:
         return self.repo.obtener_o_404(id_, "metodo_pago")
 
+    def actualizar(
+        self,
+        id_: int,
+        *,
+        nombre: str | None = None,
+        activo: bool | None = None,
+    ) -> MetodoPago:
+        metodo = self.obtener(id_)
+        if nombre is not None:
+            metodo.nombre = nombre.strip()
+        if activo is not None:
+            metodo.activo = activo
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise ConflictoNegocioError("Nombre de método de pago duplicado") from exc
+        self.db.refresh(metodo)
+        return metodo
+
+    def eliminar(self, id_: int) -> None:
+        """Baja lógica (activo=false) — no borra filas referenciadas."""
+        metodo = self.obtener(id_)
+        metodo.activo = False
+        self.db.commit()
+
 
 class CuentaCajaService:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.repo = CuentaCajaRepo(db)
+        self.movimientos = MovimientoCajaRepo(db)
 
     def crear(
         self, *, nombre: str, tipo_cuenta: str, activo: bool = True
@@ -95,6 +121,43 @@ class CuentaCajaService:
 
     def obtener(self, id_: int) -> CuentaCaja:
         return self.repo.obtener_o_404(id_, "cuenta_caja")
+
+    def actualizar(
+        self,
+        id_: int,
+        *,
+        nombre: str | None = None,
+        tipo_cuenta: str | None = None,
+        activo: bool | None = None,
+    ) -> CuentaCaja:
+        cuenta = self.obtener(id_)
+        if nombre is not None:
+            cuenta.nombre = nombre.strip()
+        if tipo_cuenta is not None:
+            try:
+                cuenta.tipo_cuenta = TipoCuentaCaja(tipo_cuenta).value
+            except ValueError as exc:
+                raise ValidacionError(
+                    f"tipo_cuenta inválido: {tipo_cuenta}"
+                ) from exc
+        if activo is not None:
+            cuenta.activo = activo
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise ConflictoNegocioError("Nombre de cuenta de caja duplicado") from exc
+        self.db.refresh(cuenta)
+        return cuenta
+
+    def eliminar(self, id_: int) -> None:
+        cuenta = self.obtener(id_)
+        cuenta.activo = False
+        self.db.commit()
+
+    def saldo(self, id_: int) -> Decimal:
+        self.obtener(id_)
+        return money_round(self.movimientos.saldo_cuenta(id_))
 
 
 class PagoService:
@@ -140,7 +203,6 @@ class PagoService:
         fecha_pago: datetime | None = None,
     ) -> Pago:
         """Registra anticipo/pago. Si confirmar=True nace CONFIRMADO + caja."""
-        # Bloqueo pesimista de la fila de pedido (§5.8).
         pedido = self.db.scalars(
             select(Pedido).where(Pedido.id == pedido_id).with_for_update()
         ).first()
@@ -194,10 +256,22 @@ class PagoService:
         return pago
 
     def confirmar(self, id_: int, *, notas: str | None = None) -> Pago:
+        """Confirma pago PENDIENTE. Idempotente si ya está CONFIRMADO (§ Stage 7)."""
         pago = self.obtener(id_)
+
+        if pago.estado == EstadoPago.CONFIRMADO:
+            # Idempotencia: asegura un único movimiento_caja.
+            self._crear_movimiento_caja(pago, idempotente=True)
+            self.db.commit()
+            self.db.refresh(pago)
+            return pago
+
+        if pago.estado == EstadoPago.ANULADO:
+            raise ConflictoNegocioError("No se puede confirmar un pago ANULADO")
+
         if pago.estado != EstadoPago.PENDIENTE:
             raise ConflictoNegocioError(
-                "Solo se pueden confirmar pagos en estado PENDIENTE"
+                f"Estado de pago no confirmable: {pago.estado}"
             )
 
         pedido = self.db.scalars(
@@ -215,18 +289,22 @@ class PagoService:
         pago.estado = EstadoPago.CONFIRMADO
         if notas is not None:
             pago.notas = notas
-        self._crear_movimiento_caja(pago)
+        self._crear_movimiento_caja(pago, idempotente=True)
         self.db.commit()
         self.db.refresh(pago)
         return pago
 
     def anular(self, id_: int, *, notas: str | None = None) -> Pago:
-        """Anula un pago PENDIENTE. CONFIRMADO no se anula en Stage 5 (Stage 7)."""
+        """Anula PENDIENTE o CONFIRMADO. Si había caja, elimina el movimiento."""
         pago = self.obtener(id_)
-        if pago.estado != EstadoPago.PENDIENTE:
-            raise ConflictoNegocioError(
-                "Solo se pueden anular pagos en estado PENDIENTE en esta etapa"
-            )
+        if pago.estado == EstadoPago.ANULADO:
+            return pago
+
+        if pago.estado == EstadoPago.CONFIRMADO:
+            mov = self.movimientos.obtener_por_pago(pago.id)
+            if mov is not None:
+                self.movimientos.eliminar(mov)
+
         pago.estado = EstadoPago.ANULADO
         if notas is not None:
             pago.notas = notas
@@ -234,9 +312,13 @@ class PagoService:
         self.db.refresh(pago)
         return pago
 
-    def _crear_movimiento_caja(self, pago: Pago) -> MovimientoCaja:
+    def _crear_movimiento_caja(
+        self, pago: Pago, *, idempotente: bool = False
+    ) -> MovimientoCaja:
         existente = self.movimientos.obtener_por_pago(pago.id)
         if existente is not None:
+            if idempotente:
+                return existente
             raise ConflictoNegocioError(
                 f"El pago id={pago.id} ya tiene movimiento de caja"
             )
@@ -247,4 +329,14 @@ class PagoService:
             pago_id=pago.id,
             descripcion=f"Pago pedido id={pago.pedido_id}",
         )
-        return self.movimientos.agregar(mov)
+        try:
+            with self.db.begin_nested():
+                return self.movimientos.agregar(mov)
+        except IntegrityError as exc:
+            if idempotente:
+                existente2 = self.movimientos.obtener_por_pago(pago.id)
+                if existente2 is not None:
+                    return existente2
+            raise ConflictoNegocioError(
+                f"El pago id={pago.id} ya tiene movimiento de caja"
+            ) from exc

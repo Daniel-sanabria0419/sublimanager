@@ -2,9 +2,14 @@
 
 from app.repositories.compras import CompraRepo, ItemCompraRepo, ProveedorRepo
 from app.repositories.finanzas import (
+    CategoriaGastoRepo,
+    ConsultasFinancierasRepo,
     CuentaCajaRepo,
+    GastoRepo,
     MetodoPagoRepo,
     MovimientoCajaRepo,
+    PagoGastoRepo,
+    PagoProveedorRepo,
     PagoRepo,
 )
 from app.repositories.inventario import (
@@ -47,14 +52,17 @@ __all__ = [
     "AsientoCostoProduccionRepo",
     "BodegaRepo",
     "CategoriaCostoRepo",
+    "CategoriaGastoRepo",
     "CategoriaMaterialRepo",
     "CategoriaProductoRepo",
     "ClienteRepo",
     "CompraRepo",
+    "ConsultasFinancierasRepo",
     "ConsumoProduccionRepo",
     "CuentaCajaRepo",
     "DisenoPedidoRepo",
     "ExistenciaRepo",
+    "GastoRepo",
     "HistorialEstadoPedidoRepo",
     "ItemCompraRepo",
     "ItemMovimientoRepo",
@@ -66,6 +74,8 @@ __all__ = [
     "MovimientoCajaRepo",
     "MovimientoInventarioRepo",
     "OrdenProduccionRepo",
+    "PagoGastoRepo",
+    "PagoProveedorRepo",
     "PagoRepo",
     "PedidoRepo",
     "PerfilCostoProductoRepo",

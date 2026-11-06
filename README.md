@@ -2,7 +2,7 @@
 
 ERP de sublimación (V1): backend FastAPI + PostgreSQL y cliente desktop CustomTkinter desacoplados por REST.
 
-**Etapa actual:** Stage 6 — Producción (OP desde pedido, consumos/desperdicio con descuento único, cantidades parciales, costos ESTIMADO vs REAL, cierre).
+**Etapa actual:** Stage 7 — Finanzas (pagos clientes/gastos/proveedores, caja idempotente, CxC/CxP, resumen §5.10).
 
 ## Stack
 
