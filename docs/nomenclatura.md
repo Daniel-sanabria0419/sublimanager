@@ -1,8 +1,8 @@
 # Nomenclatura en español — referencia Stage 1
 
 Espejo condensado de `nomenclatura-es.md` y `database.md` del Project store
-(Stage 0 **aprobado**). Stage 1 **no** crea tablas; esta guía fija el idioma
-que usarán modelos, migraciones y API desde Stage 2.
+(Stage 0 **aprobado**). Stage 2 materializa las 36 tablas vía Alembic
+(`20261106_0002`); esta guía fija el idioma de schema, API y UI.
 
 ## Reglas
 

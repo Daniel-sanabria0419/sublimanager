@@ -1,16 +1,14 @@
-"""Constantes compartidas del backend (Stage 1 — mínimas).
+"""Constantes compartidas del backend.
 
 Nomenclatura de negocio (tablas, columnas, enums, paths) en español según
-docs/nomenclatura.md. Los enums UPPER_SNAKE y los modelos de las 36 tablas
-se materializan en Stage 2 — aquí solo se documentan prefijos y precisiones.
+docs/nomenclatura.md. Enums de dominio: `app.models.enums`.
 """
 
 API_V1_PREFIX = "/api/v1"
 HEALTH_PATH = "/health"
 HEALTH_DB_PATH = "/health/db"
 
-# Prefijos de recursos previstos (Stage 2+). Paths en kebab-case español.
-# No hay routers de negocio en Stage 1.
+# Prefijos de recursos previstos (routers de negocio en Stages 3–7).
 RUTAS_RECURSOS_V1 = {
     "materiales": f"{API_V1_PREFIX}/materiales",
     "bodegas": f"{API_V1_PREFIX}/bodegas",
@@ -29,6 +27,11 @@ RUTAS_RECURSOS_V1 = {
 # Precisión Decimal de negocio (Stage 0; helpers money_round/qty_round en Stage 3+)
 DINERO_DECIMALES = 2
 CANTIDAD_DECIMALES = 4
+PORCENTAJE_DECIMALES = 2
 
-# Recordatorio V1 (Stage 2): ordenes_produccion.pedido_id es NOT NULL.
+# V1: ordenes_produccion.pedido_id es NOT NULL.
 PEDIDO_ID_REQUERIDO_EN_OP = True
+
+# Revisiones Alembic Stage 2
+ALEMBIC_REVISION_SCHEMA_V1 = "20261106_0002"
+CANTIDAD_TABLAS_NEGOCIO = 36

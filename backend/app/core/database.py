@@ -12,8 +12,7 @@ from app.core.config import get_settings
 class Base(DeclarativeBase):
     """Base declarativa para modelos SQLAlchemy.
 
-    Stage 2 registrará las 36 tablas en español
-    (`materiales`, `pedidos`, `ordenes_produccion`, …).
+    Las 36 tablas en español se registran al importar `app.models`.
     """
 
 
