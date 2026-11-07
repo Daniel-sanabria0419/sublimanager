@@ -10,7 +10,8 @@ Cliente ERP de escritorio con **CustomTkinter** + **Matplotlib**. Toda la lógic
 
 ```bash
 pip install -r desktop/requirements.txt
-# En Debian/Ubuntu también: sudo apt install python3-tk
+# macOS (Homebrew Python 3.12): brew install python-tk@3.12
+# Debian/Ubuntu: sudo apt install python3-tk
 ```
 
 ## Arranque
