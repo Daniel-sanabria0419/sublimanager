@@ -10,7 +10,7 @@ Instalación desde cero para desarrollo u operación local. Para el día a día 
 | PostgreSQL | **16+** (recomendado vía Docker Compose) |
 | Git | Para clonar el repositorio |
 | Docker Compose | Opcional pero recomendado |
-| Tk (desktop) | En Debian/Ubuntu: `sudo apt install python3-tk` |
+| Tk (desktop) | macOS Homebrew: `brew install python-tk@3.12`; Debian/Ubuntu: `sudo apt install python3-tk` |
 
 ## 1. Clonar y entorno virtual
 

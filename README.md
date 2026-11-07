@@ -34,7 +34,10 @@ sublimanager/
 | Sistema | Linux / macOS / Windows (Tk disponible) |
 | Opcional | Docker / Docker Compose |
 
-En Debian/Ubuntu para el desktop: `sudo apt install python3-tk`.
+**Tk para el desktop:** CustomTkinter necesita `_tkinter` del Python del sistema.
+
+- macOS (Homebrew Python 3.12): `brew install python-tk@3.12` (si hace falta: `brew install tcl-tk`)
+- Debian/Ubuntu: `sudo apt install python3-tk`
 
 ## Arranque rápido
 
